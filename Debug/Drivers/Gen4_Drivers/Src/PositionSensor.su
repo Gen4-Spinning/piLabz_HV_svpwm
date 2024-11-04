@@ -1,0 +1,4 @@
+../Drivers/Gen4_Drivers/Src/PositionSensor.c:12:6:resetPositionSensor	24	static
+../Drivers/Gen4_Drivers/Src/PositionSensor.c:27:6:PositionSensor_update	24	static
+../Drivers/Gen4_Drivers/Src/PositionSensor.c:64:6:getAveragedVelocityRadSec	16	static
+../Drivers/Gen4_Drivers/Src/PositionSensor.c:78:7:getElecAngleFromMechAngle	32	static

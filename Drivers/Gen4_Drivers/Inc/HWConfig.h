@@ -1,0 +1,31 @@
+/*
+ * HW_config.h
+ *
+ *  Created on: Feb 26, 2024
+ *      Author: harsha
+ */
+
+#ifndef HW_CONFIG_H_
+#define HW_CONFIG_H_
+
+#define POLEPAIRS 3
+
+//encoder
+#define SPI_RDNG_TO_MECH_ANGLE 0.0220 // (360/16384)
+#define MECH_RADS_PER_ELECTRICAL_REV 2.0944f // 2*pi()/POLE_PAIRS
+//timer1
+#define TIMER1_INTERRUPT_FREQ 10000
+#define TIM1_DT 1.0f/TIMER1_INTERRUPT_FREQ
+#define TIMER1_ARR 1249.0f
+#define MAX_DUTY 0.95f
+//ADC
+#define VOLT_PER_COUNT 0.0008056640625f
+#define GAIN 20.0f
+#define SHUNT 0.005f
+#define CS_CONSTANT VOLT_PER_COUNT/(GAIN*SHUNT)
+#define VOLTAGE_DIVIDER_RATIO 0.053030303f
+#define V_CONSTANT VOLT_PER_COUNT/VOLTAGE_DIVIDER_RATIO;
+
+
+
+#endif /* GEN4_DRIVERS_INC_HW_CONFIG_H_ */

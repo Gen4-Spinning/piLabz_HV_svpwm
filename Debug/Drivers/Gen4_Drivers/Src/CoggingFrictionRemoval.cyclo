@@ -1,0 +1,4 @@
+../Drivers/Gen4_Drivers/Src/CoggingFrictionRemoval.c:28:6:setMaxFrictionPWM	1
+../Drivers/Gen4_Drivers/Src/CoggingFrictionRemoval.c:33:6:lookupFrictionAddition	1
+../Drivers/Gen4_Drivers/Src/CoggingFrictionRemoval.c:41:6:setMaxCoggingPWM	1
+../Drivers/Gen4_Drivers/Src/CoggingFrictionRemoval.c:46:6:lookupCoggingAddition	1

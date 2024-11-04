@@ -1,0 +1,14 @@
+../Drivers/Gen4_Drivers/Src/FOC.c:11:6:FOC_calcSVPWM	9
+../Drivers/Gen4_Drivers/Src/FOC.c:73:6:FOC_applyPWM	2
+../Drivers/Gen4_Drivers/Src/FOC.c:84:6:ZeroAllCCRs	1
+../Drivers/Gen4_Drivers/Src/FOC.c:95:6:HW_statesInit	1
+../Drivers/Gen4_Drivers/Src/FOC.c:100:6:StartAllPWM	2
+../Drivers/Gen4_Drivers/Src/FOC.c:115:6:StopAllPWM	2
+../Drivers/Gen4_Drivers/Src/FOC.c:131:6:Zero_PID_Terms	1
+../Drivers/Gen4_Drivers/Src/FOC.c:137:6:Init_PID_Terms	1
+../Drivers/Gen4_Drivers/Src/FOC.c:146:7:ExecVoltagePID	1
+../Drivers/Gen4_Drivers/Src/FOC.c:157:6:getTargetCurrentsDQ	1
+../Drivers/Gen4_Drivers/Src/FOC.c:173:6:FOC_updateSensorVals	1
+../Drivers/Gen4_Drivers/Src/FOC.c:183:6:getVq	1
+../Drivers/Gen4_Drivers/Src/FOC.c:193:6:getVd	1
+../Drivers/Gen4_Drivers/Src/FOC.c:202:6:Initialize_FOC_Terms	1

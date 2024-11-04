@@ -1,0 +1,4 @@
+../Drivers/Gen4_Drivers/Src/PositionSensor.c:12:6:resetPositionSensor	2
+../Drivers/Gen4_Drivers/Src/PositionSensor.c:27:6:PositionSensor_update	4
+../Drivers/Gen4_Drivers/Src/PositionSensor.c:64:6:getAveragedVelocityRadSec	3
+../Drivers/Gen4_Drivers/Src/PositionSensor.c:78:7:getElecAngleFromMechAngle	1

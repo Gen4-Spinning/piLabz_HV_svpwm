@@ -1,0 +1,8 @@
+../Drivers/Gen4_Drivers/Src/RampDuty.c:11:6:InitRampDutyStruct	32	static
+../Drivers/Gen4_Drivers/Src/RampDuty.c:44:6:StartRampDuty	16	static
+../Drivers/Gen4_Drivers/Src/RampDuty.c:48:6:StartRampDownDuty	16	static
+../Drivers/Gen4_Drivers/Src/RampDuty.c:53:6:StopRampDuty	16	static
+../Drivers/Gen4_Drivers/Src/RampDuty.c:60:6:ResetRampDuty	24	static
+../Drivers/Gen4_Drivers/Src/RampDuty.c:90:6:ExecRampDuty	16	static
+../Drivers/Gen4_Drivers/Src/RampDuty.c:156:7:ChangeDuty	24	static
+../Drivers/Gen4_Drivers/Src/RampDuty.c:175:6:Recalculate_RampDuty_RampRates	24	static

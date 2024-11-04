@@ -1,0 +1,8 @@
+../Drivers/Gen4_Drivers/Src/AS5x47P.c:15:9:checkReadForError	1
+../Drivers/Gen4_Drivers/Src/AS5x47P.c:20:6:parityCheck	4
+../Drivers/Gen4_Drivers/Src/AS5x47P.c:37:9:AS5047_SPI_Write	5
+../Drivers/Gen4_Drivers/Src/AS5x47P.c:85:10:AS5047_SPI_Read	4
+../Drivers/Gen4_Drivers/Src/AS5x47P.c:111:10:AS5047_readRegister	1
+../Drivers/Gen4_Drivers/Src/AS5x47P.c:122:6:AS5047_writeRegister	1
+../Drivers/Gen4_Drivers/Src/AS5x47P.c:139:10:AS5047_ReadZeroValue	1
+../Drivers/Gen4_Drivers/Src/AS5x47P.c:151:6:AS5047_WriteZeroValue	1

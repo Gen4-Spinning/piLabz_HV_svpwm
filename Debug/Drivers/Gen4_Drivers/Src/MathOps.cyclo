@@ -1,0 +1,3 @@
+../Drivers/Gen4_Drivers/Src/MathOps.c:11:7:fast_fmaxf	2
+../Drivers/Gen4_Drivers/Src/MathOps.c:16:7:fast_fminf	2
+../Drivers/Gen4_Drivers/Src/MathOps.c:21:6:limit_norm	2

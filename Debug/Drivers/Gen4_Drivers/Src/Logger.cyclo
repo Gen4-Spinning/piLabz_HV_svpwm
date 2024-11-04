@@ -1,0 +1,10 @@
+../Drivers/Gen4_Drivers/Src/Logger.c:16:6:hsLogInit	1
+../Drivers/Gen4_Drivers/Src/Logger.c:23:6:hsLogStart	1
+../Drivers/Gen4_Drivers/Src/Logger.c:33:6:hsLogReset	1
+../Drivers/Gen4_Drivers/Src/Logger.c:43:6:switchBuffers	3
+../Drivers/Gen4_Drivers/Src/Logger.c:57:10:add8Bit	2
+../Drivers/Gen4_Drivers/Src/Logger.c:66:10:add16Bit	2
+../Drivers/Gen4_Drivers/Src/Logger.c:77:10:addFloat	2
+../Drivers/Gen4_Drivers/Src/Logger.c:93:10:add32Bit	2
+../Drivers/Gen4_Drivers/Src/Logger.c:109:10:addData	1
+../Drivers/Gen4_Drivers/Src/Logger.c:136:6:hsLog_CheckStopConditionReached	5
