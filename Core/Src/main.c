@@ -98,6 +98,11 @@ int8_t turnOffPWMS=0,readPosition=0,turnOff_sensors = 0;
 //OL debug mode
 float OL_elecRadians = 0,d_elecRadians = 0,OL_RPM = 0;
 uint8_t runOL = 0,OL_init = 0,OL_stop = 0;
+long lastOL_Counter = 0;
+uint16_t OL_delayCycles = 10;
+float error_elecRadians = 0,actual_elRadians = 0,OL_offsetRadians = 0,temp =0,correctionPercent=0;
+uint8_t addCorrectionPercent = 0;
+float out2 = 0;
 //posControl
 uint8_t setupPosJC = 0,startPosC=0,stopPosC=0;
 float pos_targetThetaDeg=0,pos_targetTime_ms = 0;
@@ -112,6 +117,9 @@ uint8_t setupFrictionAddition = 0;
 uint16_t frictionMaxPWM = 6; // 6 experimentally found.
 uint8_t setupCoggingAddition = 0;
 uint16_t coggingMaxPWM = 10;
+
+uint8_t checkEncoderHealth = 0;
+uint8_t encoderNOK = 0;
 
 /* USER CODE END PV */
 
@@ -151,19 +159,35 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			PositionSensor_update(&ps,TIM1_DT);
 			getAveragedVelocityRadSec(&ps);
 			updateSpeedCalc(&s,&ps);
+			actual_elRadians = ps.elecRadians - OL_offsetRadians;
+			if (actual_elRadians < 0){ //works For CW
+				temp = 6.28f - actual_elRadians;
+				actual_elRadians = temp;
+			}
 		}
 
 		if (runOL){
-			OL_elecRadians += d_elecRadians;
-			if (OL_elecRadians >= 6.28f){
-				OL_elecRadians = 0;
+			if (svpwm.loopCounter > lastOL_Counter+OL_delayCycles){
+				OL_elecRadians += d_elecRadians;
+				if (OL_elecRadians >= 6.28f){
+					OL_elecRadians = 0;
+				}
+				if (OL_elecRadians < 0){
+					OL_elecRadians = 6.28f;
+				}
+				error_elecRadians = OL_elecRadians - actual_elRadians;
+				posPID.out = ExecPID(&posPID,OL_elecRadians,actual_elRadians,-0.5,0.5);
+				svpwm.voltagePercent = r.currentDutyF/TIMER1_ARR;
+				correctionPercent = posPID.out;
+				out2  = svpwm.voltagePercent + correctionPercent;
+				foc.m = svpwm.voltagePercent;
+				if (addCorrectionPercent){
+					foc.m = out2;
+				}
+				FOC_calcSVPWM(&svpwm,foc.m,OL_elecRadians,0);//PI_BY_2F);
+				FOC_applyPWM(&svpwm,0,ms.reversePhases);
+				lastOL_Counter = svpwm.loopCounter;
 			}
-			if (OL_elecRadians < 0){
-				OL_elecRadians = 6.28f;
-			}
-			svpwm.voltagePercent = r.currentDutyF/TIMER1_ARR;
-			FOC_calcSVPWM(&svpwm,svpwm.voltagePercent,OL_elecRadians,PI_BY_2F);
-			FOC_applyPWM(&svpwm,0,ms.reversePhases);
 		}
 
 		//only changing the duty cycle and SVPWM
@@ -190,7 +214,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 		if (rampRPM.rampPhase!=RAMP_WAIT){
 			//quick and dirty voltage pid has no anti windup and is limited to only positive nos
-			speedPID.out = ExecVoltagePID(&speedPID,rampRPM.instTargetRPM_F,fabs(ps.velocityRPM),0,500); // voltage PID running inside the Hight Task Freq!
+			speedPID.out = ExecVoltagePID(&speedPID,rampRPM.instTargetRPM_F,fabs(ps.velocityRPM),0,800); // voltage PID running inside the Hight Task Freq!
 			svpwm.voltagePercent = speedPID.out/TIMER1_ARR;
 
 			fr.inst_frictionAddition = 0;
@@ -311,8 +335,8 @@ int main(void)
   and the 30 mm stack motor*/
 
   //---45 mm Values ----//
-  ms.encAvg_offset = 2431;//d axis, 3485 is q axis, 45mmstack -> Daxis 2431,qAxis 3485
-  ms.reversePhases = 0;
+  ms.encAvg_offset = 5210;//d axis 45mmstack -> Daxis 5210,
+  ms.reversePhases = 1;
   ms.encCW_offset = 0; //find these nos by watching where the current is lowest for say 1000 rpm in closed loop
   ms.encCCW_offset = -1.3;
   //---30mm stack values ---//
@@ -335,11 +359,11 @@ int main(void)
 
   // plotted and found Kp ki constant values with dbgTorque..
   Init_PID_Terms(&speedPID,3.0f,0.4f,0.0f,0.05f);
-  Init_PID_Terms(&posPID,0.01f,0.00f,0.20f,0.0f);
+  Init_PID_Terms(&posPID,3.0f,0.001f,0.00f,0.005f);
 
   //only start the timer after youve done calibration properly, cos your reading the ADC in the timer also.
   HAL_TIM_Base_Start_IT(&htim1);
-  htim1.Instance->RCR = 1; // If its after the counter has started, interrupt is on the OVF,
+  htim1.Instance->RCR = 1; // If its after the counter has started, interrupt is on the OVF, and division of interrupt is at (RCR+1), so for 1, divide by 2, for 0->1
 
   HAL_TIM_Base_Start_IT(&htim6); // 20 ms interrupt
  // HAL_TIM_Base_Start_IT(&htim7); // 1 ms interrupt
@@ -368,6 +392,11 @@ int main(void)
 		  turnOffPWMS = 0;
 	  }
 
+	  if (checkEncoderHealth){
+		  encoderNOK = Encoder_checkHealth();
+		  checkEncoderHealth = 0;
+	  }
+
 	  if (turnOff_sensors){
 		  readPosition = 0;
 		  turnOff_sensors = 0;
@@ -386,7 +415,6 @@ int main(void)
 	  }
 	  if (stopPosC){
 		  p.state = POS_OVER;
-		  //Reset_posControlJC(&p);
 		  stopPosC = 0;
 	  }
 
@@ -406,13 +434,16 @@ int main(void)
 	  if (OL_init){ // do with a position Loop
 		  //turn on the PWMS
 		  readPosition = 1;
-		  d_elecRadians = 0.005;
-		  r.currentDutyF = 80;
+		  d_elecRadians = 0.001;
+		  r.currentDutyF = 100;
 		  //turn on the PWMS
 		  ZeroAllCCRs(&svpwm);
 		  StartAllPWM(&hw);
 		  runOL = 1;
 		  OL_init = 0;
+		  //pid stuff
+		  HAL_Delay(100); // time for a reading to be taken.
+		  OL_offsetRadians = ps.elecRadians;
 	  }
 
 	  if (OL_stop){
@@ -459,11 +490,12 @@ int main(void)
 		  dbg_rampDuty_Stop =0;
 	  }
 
+
 	  /*------------------------------------------*/
 	  //run with RPM
 	  if (dbg_rampRPM_RUStart){
 		//fill up the Ramp Duty Struct- TargetRPRm,rampUp Time, rampDownTime, and steadY state runTime
-		InitRampRPMStruct(&rampRPM,targetRPM,10.0,12.0,300.0);
+		InitRampRPMStruct(&rampRPM,targetRPM,10.0f,12.0f,300.0f);
 		readPosition = 1;
 		Zero_PID_Terms(&speedPID);
 		StartRampRPM(&rampRPM); 		// we need to start the Ramp

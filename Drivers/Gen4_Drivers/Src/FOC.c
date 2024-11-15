@@ -154,6 +154,18 @@ float ExecVoltagePID(PID *pid,float target, float actual,float min,float max){
 	return out;
 }
 
+
+float ExecPID(PID *pid,float target, float actual,float min,float max){
+	pid->error = target - actual;
+	pid->integralError = pid->integralError + (pid->error*TIM1_DT);
+	pid->KpTerm = pid->Kp * pid->error;
+	pid->KiTerm = pid->Ki*pid->integralError;
+	pid->FFTerm = pid->FF*target ;
+	float out =  pid->KpTerm + pid->KiTerm + pid->FFTerm + pid->sO;
+	out = fast_fmaxf(fast_fminf(out,max),min);
+	return out;
+}
+
 void getTargetCurrentsDQ(PID *pid,FOC *foc,float target, float actual){
 	pid->error = target - actual;
 	pid->integralError = pid->integralError + pid->error;

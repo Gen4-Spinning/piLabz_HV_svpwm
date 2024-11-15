@@ -190,3 +190,92 @@ void Recalculate_RampDuty_RampRates(RampDuty *ramp,uint16_t newTarget){
 	ramp->dDuty_F_RD = ((float)ramp->finalTargetDuty)/totalSteps;
 }
 
+//you have to make sure u give in correct values
+void InitStepRampDuty(StepRampDuty *step){
+	step->currentStep = 0;
+	step->callingTime_s = 0.020;
+	step->timer = 0;
+	step->state = RAMP_WAIT;
+}
+
+void Step_add(StepRampDuty *step,uint8_t stepIdx,int16_t stepChange,float stepTime){
+	if (stepIdx == 1){
+		step->step1_change = stepChange;
+		step->step1_time_s = stepTime;
+	}
+	else if (stepIdx == 2){
+		step->step2_change = stepChange;
+		step->step2_time_s = stepTime;
+	}
+	else if (stepIdx == 3){
+		step->step3_change = stepChange;
+		step->step3_time_s = stepTime;
+	}
+	else if (stepIdx == 4){
+		step->step4_change = stepChange;
+		step->step4_time_s = stepTime;
+	}
+	else{}
+}
+
+void startStepRampDuty(StepRampDuty *step){
+	step->state = RAMP_STEADY;
+}
+
+void stopStepRampDuty(StepRampDuty *step){
+	step->state = RAMP_WAIT;
+}
+
+
+void ExecStep(StepRampDuty *step,RampDuty *r){
+	if (step->state == RAMP_STEADY){
+		if (step->currentStep == 0){
+			if (step->timer >= step->initial_waitTime_s){
+				r->transitionTarget = r->finalTargetDuty + step->step1_change;
+				r->transitionTime_ms = 0;
+				step->currentStep += 1;
+				step->timer = 0;
+				ChangeDuty(r);
+				r->rampPhase = RAMP_CHANGE;
+			}
+		}else if (step->currentStep == 1){
+			if (step->timer >= step->step1_time_s){
+				r->transitionTarget = r->finalTargetDuty + step->step2_change;
+				r->transitionTime_ms = 0;
+				step->currentStep += 1;
+				step->timer = 0;
+				ChangeDuty(r);
+				r->rampPhase = RAMP_CHANGE;
+			}
+		}else if (step->currentStep == 2){
+			if (step->timer >= step->step2_time_s){
+				r->transitionTarget = r->finalTargetDuty + step->step3_change;
+				r->transitionTime_ms = 0;
+				step->currentStep += 1;
+				step->timer = 0;
+				ChangeDuty(r);
+				r->rampPhase = RAMP_CHANGE;
+			}
+		}else if (step->currentStep == 3){
+			if (step->timer >= step->step3_time_s){
+				r->transitionTarget = r->finalTargetDuty + step->step4_change;
+				r->transitionTime_ms = 0;
+				step->currentStep += 1;
+				step->timer = 0;
+				ChangeDuty(r);
+				r->rampPhase = RAMP_CHANGE;
+			}
+		}else if (step->currentStep == 4){
+			if (step->timer >= step->step4_time_s){ // go back to final target
+				r->transitionTarget = r->finalTargetDuty;
+				r->transitionTime_ms = 5000; //go back to the initial duty
+				step->currentStep = 0; //restart the cycles
+				step->timer = 0;
+				ChangeDuty(r);
+				r->rampPhase = RAMP_CHANGE;
+			}
+		}
+	}
+
+}
+

@@ -1,8 +1,8 @@
 ../Drivers/Gen4_Drivers/Src/EncoderFns.c:11:9:Encoder_checkHealth	16	static
-../Drivers/Gen4_Drivers/Src/EncoderFns.c:22:6:SetupABIwithoutPWM	16	static
-../Drivers/Gen4_Drivers/Src/EncoderFns.c:46:9:Check_ABI_SetCorrectly	16	static
-../Drivers/Gen4_Drivers/Src/EncoderFns.c:57:9:Encoder_setup	16	static
-../Drivers/Gen4_Drivers/Src/EncoderFns.c:71:9:Encoder_updateZeroPosition	24	static
-../Drivers/Gen4_Drivers/Src/EncoderFns.c:87:9:Encoder_enableMagErrors	16	static
-../Drivers/Gen4_Drivers/Src/EncoderFns.c:111:7:Encoder_getMechAngle_SPI	32	static
-../Drivers/Gen4_Drivers/Src/EncoderFns.c:123:10:Encoder_get16BitMechAngle_Single	24	static
+../Drivers/Gen4_Drivers/Src/EncoderFns.c:26:6:SetupABIwithoutPWM	16	static
+../Drivers/Gen4_Drivers/Src/EncoderFns.c:50:9:Check_ABI_SetCorrectly	16	static
+../Drivers/Gen4_Drivers/Src/EncoderFns.c:61:9:Encoder_setup	16	static
+../Drivers/Gen4_Drivers/Src/EncoderFns.c:75:9:Encoder_updateZeroPosition	24	static
+../Drivers/Gen4_Drivers/Src/EncoderFns.c:91:9:Encoder_enableMagErrors	16	static
+../Drivers/Gen4_Drivers/Src/EncoderFns.c:115:7:Encoder_getMechAngle_SPI	32	static
+../Drivers/Gen4_Drivers/Src/EncoderFns.c:127:10:Encoder_get16BitMechAngle_Single	24	static

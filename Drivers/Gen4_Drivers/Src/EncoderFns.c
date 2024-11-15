@@ -11,8 +11,12 @@
 uint8_t Encoder_checkHealth(void){
 	Diaagc diag;
 	diag.raw = AS5047_SPI_Read(DIAGC_READ_FRAME,0);
-	if((diag.values.magh == 1) || (diag.values.magl == 1) || (diag.values.cof == 1)){
+	if(diag.values.magh == 1){
 		return 1;
+	}else if (diag.values.magl == 1){
+		return 2;
+	}else if (diag.values.cof == 1){
+		return 3;
 	}else{
 		return 0;
 	}

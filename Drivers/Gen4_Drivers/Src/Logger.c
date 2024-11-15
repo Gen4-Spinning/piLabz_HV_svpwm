@@ -105,7 +105,7 @@ uint16_t add32Bit(HSLogger *hL,uint32_t var,uint16_t index){
 	return index+4;
 }
 
-
+extern float OL_elecRadians;
 uint16_t addData(HSLogger *hL, SVPWM *svpwm, PositionSensor *ps, FOC *foc,friction *fr , cogging *cg){
 	uint16_t idx = hL->bufferIndex;
 	idx = add8Bit(hL,0x68,idx); // D
@@ -116,10 +116,10 @@ uint16_t addData(HSLogger *hL, SVPWM *svpwm, PositionSensor *ps, FOC *foc,fricti
 	idx = addFloat(hL,ps->velocity_radsec,idx);
 
 	idx = add8Bit(hL,fr->frictionCompensationOn,idx);
-	idx = addFloat(hL,fr->inst_frictionAddition,idx);
+	idx = addFloat(hL,OL_elecRadians,idx);
 
 	idx = add8Bit(hL,cg->coggingCompensationOn,idx);
-	idx = addFloat(hL,cg->inst_coggingAddition,idx);
+	idx = addFloat(hL,ps->elecRadians,idx);
 
 	idx = addFloat(hL,svpwm->voltagePercent,idx);
 	idx = addFloat(hL,foc->m,idx);

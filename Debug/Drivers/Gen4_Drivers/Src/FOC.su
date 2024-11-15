@@ -7,8 +7,9 @@
 ../Drivers/Gen4_Drivers/Src/FOC.c:131:6:Zero_PID_Terms	16	static
 ../Drivers/Gen4_Drivers/Src/FOC.c:137:6:Init_PID_Terms	32	static
 ../Drivers/Gen4_Drivers/Src/FOC.c:146:7:ExecVoltagePID	40	static
-../Drivers/Gen4_Drivers/Src/FOC.c:157:6:getTargetCurrentsDQ	24	static
-../Drivers/Gen4_Drivers/Src/FOC.c:173:6:FOC_updateSensorVals	24	static
-../Drivers/Gen4_Drivers/Src/FOC.c:183:6:getVq	16	static
-../Drivers/Gen4_Drivers/Src/FOC.c:193:6:getVd	16	static
-../Drivers/Gen4_Drivers/Src/FOC.c:202:6:Initialize_FOC_Terms	16	static
+../Drivers/Gen4_Drivers/Src/FOC.c:158:7:ExecPID	40	static
+../Drivers/Gen4_Drivers/Src/FOC.c:169:6:getTargetCurrentsDQ	24	static
+../Drivers/Gen4_Drivers/Src/FOC.c:185:6:FOC_updateSensorVals	24	static
+../Drivers/Gen4_Drivers/Src/FOC.c:195:6:getVq	16	static
+../Drivers/Gen4_Drivers/Src/FOC.c:205:6:getVd	16	static
+../Drivers/Gen4_Drivers/Src/FOC.c:214:6:Initialize_FOC_Terms	16	static

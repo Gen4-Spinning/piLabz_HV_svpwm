@@ -20,6 +20,26 @@
 #define RAMP_WAIT 4
 #define RAMP_CHANGE 8
 
+
+typedef struct StepRampType{
+	uint8_t state;
+	uint8_t currentStep;
+	float callingTime_s;
+	float initial_waitTime_s;
+	float timer;
+
+
+	int16_t step1_change;
+	float step1_time_s;
+	int16_t step2_change;
+	float step2_time_s;
+	int16_t step3_change;
+	float step3_time_s;
+	int16_t step4_change;
+	float step4_time_s;
+}StepRampDuty;
+
+
 typedef struct RampDutyStruct {
   uint16_t finalTargetDuty;
   uint16_t currentDuty;
@@ -78,6 +98,12 @@ void ExecRampRPM(RampRPM *ramp);
 void ChangeRPM(RampRPM *r,uint16_t transitionTarget,float transitionTime_s);
 void Recalculate_RampRPM_RampRates(RampRPM *ramp,uint16_t newTarget);
 
+
+void InitStepRampDuty(StepRampDuty *step);
+void Step_add(StepRampDuty *step,uint8_t stepIdx,int16_t stepChange,float stepTime);
+void startStepRampDuty(StepRampDuty *step);
+void stopStepRampDuty(StepRampDuty *step);
+void ExecStep(StepRampDuty *step,RampDuty *r);
 
 
 

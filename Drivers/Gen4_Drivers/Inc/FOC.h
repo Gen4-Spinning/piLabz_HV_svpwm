@@ -76,6 +76,7 @@ void StopAllPWM(HW *hw);
 void FOC_updateSensorVals(FOC *foc,RAW_ADC_I_V *adc,RAW_ADC_Averages *adcAvg);
 
 void Init_PID_Terms(PID *pid,float Kp,float Ki,float SO,float FF);
+float ExecPID(PID *pid,float target, float actual,float min,float max);
 float ExecVoltagePID(PID *pid,float target, float actual,float min,float max);
 void getTargetCurrentsDQ(PID *pid,FOC *foc,float target, float actual);
 void Zero_PID_Terms(PID *pid);

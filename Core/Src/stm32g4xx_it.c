@@ -41,7 +41,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+uint8_t interrupt = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -211,7 +211,8 @@ void EXTI0_IRQHandler(void)
 
 if (__HAL_GPIO_EXTI_GET_FLAG(ENC_INDEX_Pin))
 	{ HAL_GPIO_TogglePin(GPIOB,FAULT_LED_Pin);
-		}
+	interrupt++;
+	}
   /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(ENC_INDEX_Pin);
   /* USER CODE BEGIN EXTI0_IRQn 1 */

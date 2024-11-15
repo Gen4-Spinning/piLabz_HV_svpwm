@@ -6,3 +6,8 @@
 ../Drivers/Gen4_Drivers/Src/RampDuty.c:90:6:ExecRampDuty	15
 ../Drivers/Gen4_Drivers/Src/RampDuty.c:156:7:ChangeDuty	4
 ../Drivers/Gen4_Drivers/Src/RampDuty.c:175:6:Recalculate_RampDuty_RampRates	3
+../Drivers/Gen4_Drivers/Src/RampDuty.c:194:6:InitStepRampDuty	1
+../Drivers/Gen4_Drivers/Src/RampDuty.c:201:6:Step_add	5
+../Drivers/Gen4_Drivers/Src/RampDuty.c:221:6:startStepRampDuty	1
+../Drivers/Gen4_Drivers/Src/RampDuty.c:225:6:stopStepRampDuty	1
+../Drivers/Gen4_Drivers/Src/RampDuty.c:230:6:ExecStep	12
