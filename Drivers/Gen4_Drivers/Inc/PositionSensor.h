@@ -14,7 +14,7 @@
 
 #define POS_SAMPLES 16
 #define POLE_PAIRS 3.0f
-#define CPR_ENCODER 16384;//2048.0f
+#define CPR_ENCODER 2048;//16384;//2048.0f
 #define EXP_FILTER_FACTOR 5
 
 typedef struct PositionSensorStruct{

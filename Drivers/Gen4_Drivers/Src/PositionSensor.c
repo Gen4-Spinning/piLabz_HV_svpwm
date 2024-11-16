@@ -35,7 +35,7 @@ void PositionSensor_update(PositionSensor* ps,float dt){
 	//of the chip we need to restart the continuous read. for that this fn needs to
 	//be modified.
 	ps->encoder_raw = Encoder_get16BitMechAngle_Single(1);
-	ps->encoder_raw = ps->encoder_raw ;//>> 3;
+	ps->encoder_raw = ps->encoder_raw>> 3;
 	//linearize, calibrate if you need to
 	//calculations are very fast, less than 500cycles.
 	ps->mechRadians_singleTurn = ps->encoder_raw*TWO_PI_F/CPR_ENCODER;

@@ -30,4 +30,18 @@ typedef struct ADC_Struct1{
 	float V_w_Avg;
 }RAW_ADC_Averages;
 
+typedef struct ADC_Struct2{
+	uint8_t FET_thermistor_open;
+	uint8_t motor_thermistor_open;
+	uint16_t FetTemp_ADC;
+	uint16_t motorTemp_ADC;
+	uint16_t DCV_ADC;
+	float FetTemp_C;
+	float motorTemp_C;
+	float DC_Volts;
+	uint8_t updated;
+}ADC;
+
+uint8_t get_temperature(uint16_t adcVal);
+
 #endif /* GEN4_DRIVERS_INC_ADC_H_ */

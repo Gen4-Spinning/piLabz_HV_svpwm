@@ -22,6 +22,8 @@
 "./Drivers/Gen4_Drivers/Src/RampRpm.o"
 "./Drivers/Gen4_Drivers/Src/SpeedSensor.o"
 "./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o"
+"./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.o"
+"./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.o"
 "./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cordic.o"
 "./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o"
 "./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.o"
@@ -41,3 +43,4 @@
 "./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o"
 "./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.o"
 "./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.o"
+"./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_ll_adc.o"

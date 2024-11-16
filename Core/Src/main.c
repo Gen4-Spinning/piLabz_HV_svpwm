@@ -36,6 +36,7 @@
 #include "ControlConfig.h"
 #include "PosControl-JC.h"
 #include "CoggingFrictionRemoval.h"
+#include "Error.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,11 +54,15 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc2;
+DMA_HandleTypeDef hdma_adc2;
+
 CORDIC_HandleTypeDef hcordic;
 
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
 
@@ -83,8 +88,11 @@ PID posPID;
 posControlJC p;
 friction fr;
 cogging cg;
+ADC adc;
+Error err;
 
 char UART_buffer[80];
+uint16_t ADC2_buff[3];//voltage, two temperatures
 //encoder Setup
 uint8_t setupOK = 0,errorSetupOK,encZeroPosSetup;
 //Ramps
@@ -133,6 +141,8 @@ static void MX_CORDIC_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_TIM7_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_ADC2_Init(void);
+static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -215,26 +225,32 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		if (rampRPM.rampPhase!=RAMP_WAIT){
 			//quick and dirty voltage pid has no anti windup and is limited to only positive nos
 			speedPID.out = ExecVoltagePID(&speedPID,rampRPM.instTargetRPM_F,fabs(ps.velocityRPM),0,800); // voltage PID running inside the Hight Task Freq!
-			svpwm.voltagePercent = speedPID.out/TIMER1_ARR;
+			if (fabs(speedPID.error >300)){
+				StopAllPWM(&hw)	;
+				err.globalErrorFlag = 1;
+				err.PID_error = 1;
+			}else{
+				svpwm.voltagePercent = speedPID.out/TIMER1_ARR;
 
-			fr.inst_frictionAddition = 0;
-			cg.inst_coggingAddition = 0;
-			if (fr.frictionCompensationOn){
-				lookupFrictionAddition(&fr,ps.encoder_raw); // NOT sure why sign is changing for the two sides..
-			}
-			if (cg.coggingCompensationOn){
-				lookupCoggingAddition(&cg,ps.elecRadians);
-			}
+				fr.inst_frictionAddition = 0;
+				cg.inst_coggingAddition = 0;
+				if (fr.frictionCompensationOn){
+					lookupFrictionAddition(&fr,ps.encoder_raw); // NOT sure why sign is changing for the two sides..
+				}
+				if (cg.coggingCompensationOn){
+					lookupCoggingAddition(&cg,ps.elecRadians);
+				}
 
-			if (direction == CW){
-				foc.m = svpwm.voltagePercent + fr.inst_frictionAddition + cg.inst_coggingAddition;//
-				FOC_calcSVPWM(&svpwm,foc.m,ps.elecRadians,PI_BY_3F+ms.encCW_offset);
-				FOC_applyPWM(&svpwm,0,ms.reversePhases);
-			}else if (direction == CCW){
-				foc.m = svpwm.voltagePercent - fr.inst_frictionAddition + cg.inst_coggingAddition;//
-				FOC_calcSVPWM(&svpwm,svpwm.voltagePercent,ps.elecRadians,-PI_BY_3F+ms.encCCW_offset);
-				FOC_applyPWM(&svpwm,0,ms.reversePhases);
-			}else{}
+				if (direction == CW){
+					foc.m = svpwm.voltagePercent + fr.inst_frictionAddition + cg.inst_coggingAddition;//
+					FOC_calcSVPWM(&svpwm,foc.m,ps.elecRadians,PI_BY_3F+ms.encCW_offset);
+					FOC_applyPWM(&svpwm,0,ms.reversePhases);
+				}else if (direction == CCW){
+					foc.m = svpwm.voltagePercent - fr.inst_frictionAddition + cg.inst_coggingAddition;//
+					FOC_calcSVPWM(&svpwm,svpwm.voltagePercent,ps.elecRadians,-PI_BY_3F+ms.encCCW_offset);
+					FOC_applyPWM(&svpwm,0,ms.reversePhases);
+				}else{}
+			}
 
 		} //closes RAMP wait
 
@@ -283,8 +299,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 ExecPosTrajectory(&p);
 	}
 
-
 }
+
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hadc);
+  if(hadc==&hadc2)
+  {
+	  adc.FetTemp_ADC =ADC2_buff[0];
+	  adc.motorTemp_ADC =ADC2_buff[1];
+	  adc.DCV_ADC =ADC2_buff[2];
+	  adc.updated = 1;
+  }
+}
+
 
 
 /* USER CODE END 0 */
@@ -325,7 +355,14 @@ int main(void)
   MX_TIM6_Init();
   MX_TIM7_Init();
   MX_USART2_UART_Init();
+  MX_ADC2_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
+
+  //Calibrate ADCs
+  HAL_Delay(100);
+  HAL_ADCEx_Calibration_Start(&hadc2,ADC_SINGLE_ENDED);
+  HAL_Delay(100);
 
   HW_statesInit(&hw);
   hsLogInit(&hsLog);
@@ -366,26 +403,61 @@ int main(void)
   htim1.Instance->RCR = 1; // If its after the counter has started, interrupt is on the OVF, and division of interrupt is at (RCR+1), so for 1, divide by 2, for 0->1
 
   HAL_TIM_Base_Start_IT(&htim6); // 20 ms interrupt
- // HAL_TIM_Base_Start_IT(&htim7); // 1 ms interrupt
+  HAL_TIM_Base_Start_IT(&htim7); // 1 ms interrupt
   //first values of the position sensor are noisy. so start reading it here, wait
   //for a while and then turn it off
   readPosition = 1;
   HAL_Delay(10);
   readPosition = 0;
 
-
   setMaxFrictionPWM(&fr,frictionMaxPWM);
   setMaxCoggingPWM(&cg,coggingMaxPWM);
   fr.frictionCompensationOn = 0;
   cg.coggingCompensationOn = 0;
 
+  //Start the ADCs -only for DC voltage and Temperature.
+  HAL_TIM_Base_Start_IT(&htim4);//start timer for adc2 trigger
+  HAL_ADC_Start_DMA(&hadc2,(uint32_t*)ADC2_buff,3);
+  HAL_Delay(100);
+  adc.FET_thermistor_open = checkThermistorOpen(adc.FetTemp_ADC);
+  adc.motor_thermistor_open = checkThermistorOpen(adc.motorTemp_ADC);
 
+  if (adc.FET_thermistor_open == 1){
+	  err.globalErrorFlag = 1;
+	  err.fetThermistorOpen = 1;
+  }
+  if (adc.motor_thermistor_open == 1){
+	  err.globalErrorFlag = 1;
+	  err.windingsThermistorOpen = 1;
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  if (adc.updated){
+		  adc.FetTemp_C = get_temperature(adc.FetTemp_ADC);
+		  adc.motorTemp_C = get_temperature(adc.motorTemp_ADC);
+		  if (adc.FetTemp_C > 65){
+			  err.globalErrorFlag = 1;
+			  err.temp_FET_outOfBounds = 1;
+		  }
+		  if (adc.motorTemp_C > 90){
+			  err.globalErrorFlag = 1;
+			  err.temp_windings_outOfBounds = 1;
+		  }
+
+		  adc.updated=0;
+	  }
+
+	  if (err.globalErrorFlag == 1){
+		  StopAllPWM(&hw);
+		  while(1){
+			  err.counter++;
+			  HAL_Delay(1000);
+		  }
+	  }
 
 	  if (turnOffPWMS){
 		  StopAllPWM(&hw);
@@ -631,6 +703,83 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief ADC2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC2_Init(void)
+{
+
+  /* USER CODE BEGIN ADC2_Init 0 */
+
+  /* USER CODE END ADC2_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC2_Init 1 */
+
+  /* USER CODE END ADC2_Init 1 */
+
+  /** Common config
+  */
+  hadc2.Instance = ADC2;
+  hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc2.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc2.Init.GainCompensation = 0;
+  hadc2.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  hadc2.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+  hadc2.Init.LowPowerAutoWait = DISABLE;
+  hadc2.Init.ContinuousConvMode = DISABLE;
+  hadc2.Init.NbrOfConversion = 3;
+  hadc2.Init.DiscontinuousConvMode = DISABLE;
+  hadc2.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T4_TRGO;
+  hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc2.Init.DMAContinuousRequests = ENABLE;
+  hadc2.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc2.Init.OversamplingMode = DISABLE;
+  if (HAL_ADC_Init(&hadc2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_2;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES_5;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_13;
+  sConfig.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_17;
+  sConfig.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC2_Init 2 */
+
+  /* USER CODE END ADC2_Init 2 */
+
+}
+
+/**
   * @brief CORDIC Initialization Function
   * @param None
   * @retval None
@@ -787,6 +936,51 @@ static void MX_TIM1_Init(void)
 }
 
 /**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 1249;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 2399;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
+
+}
+
+/**
   * @brief TIM6 Initialization Function
   * @param None
   * @retval None
@@ -924,6 +1118,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+  /* DMA1_Channel2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
 
 }
 
@@ -939,26 +1136,48 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, SPI1_CS_Pin|FAULT_LED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : ENC_B_Pin */
-  GPIO_InitStruct.Pin = ENC_B_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  /*Configure GPIO pins : PC13 PC14 PC15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
-  HAL_GPIO_Init(ENC_B_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PG10 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA0 PA6 PA7 PA11
+                           PA12 PA15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_11
+                          |GPIO_PIN_12|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : ENC_INDEX_Pin */
   GPIO_InitStruct.Pin = ENC_INDEX_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(ENC_INDEX_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB1 PB2 PB10 PB11
+                           PB12 PB8 PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10|GPIO_PIN_11
+                          |GPIO_PIN_12|GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SPI1_CS_Pin FAULT_LED_Pin */
   GPIO_InitStruct.Pin = SPI1_CS_Pin|FAULT_LED_Pin;
@@ -968,7 +1187,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 3, 0);
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */

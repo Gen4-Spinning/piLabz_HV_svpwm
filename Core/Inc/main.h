@@ -59,8 +59,12 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define ENC_B_Pin GPIO_PIN_7
-#define ENC_B_GPIO_Port GPIOA
+#define INVERTER_TEMP_Pin GPIO_PIN_1
+#define INVERTER_TEMP_GPIO_Port GPIOA
+#define DC_VOLTAGE_Pin GPIO_PIN_4
+#define DC_VOLTAGE_GPIO_Port GPIOA
+#define MOTOR_TEMP_Pin GPIO_PIN_5
+#define MOTOR_TEMP_GPIO_Port GPIOA
 #define ENC_INDEX_Pin GPIO_PIN_0
 #define ENC_INDEX_GPIO_Port GPIOB
 #define ENC_INDEX_EXTI_IRQn EXTI0_IRQn
